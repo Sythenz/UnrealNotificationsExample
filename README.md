@@ -5,5 +5,7 @@ This example includes three types of notifications, simple, one with hyperlinks 
 choice buttons. It's also split into three tutorials, links can be found here:
 
 Part 1: https://codekittah.medium.com/notifications-in-unreal-engine-part-1-e7239917c37e
+
 Part 2: -
+
 Part 3: -
