@@ -45,7 +45,7 @@ public class NotificationsExample : ModuleRules
                 "EditorStyle"
 				// ... add private dependencies that you statically link with here ...	
 			}
-			);
+		);
 		
 		
 		DynamicallyLoadedModuleNames.AddRange(

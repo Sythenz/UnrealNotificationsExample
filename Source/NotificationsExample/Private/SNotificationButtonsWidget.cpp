@@ -73,7 +73,7 @@ FReply SNotificationButtonsWidget::SpawnNotificationWithLink()
 	
 	//To use an icon in your notifications, add EditorStyle to your Build.cs under PrivateDependencyModuleNames
 	Info.bUseSuccessFailIcons = true;
-	Info.Image = FEditorStyle::GetBrush(TEXT("MessageLog.Error"));
+	Info.Image = FEditorStyle::GetBrush(TEXT("MessageLog.Note"));
 
 	/* 
 		Create a Hyperlink that appears at the bottom right of the notification.
@@ -98,15 +98,22 @@ FReply SNotificationButtonsWidget::SpawnNotificationWithLink()
 
 FReply SNotificationButtonsWidget::SpawnChoiceNotification()
 {
-	const FText NotificationText = LOCTEXT("SlateGuideCreateNotificationButtons", "Restart The Editor?");
-
+	/*
+	 In our header we have defined an empty NotificationPtr.
+	 A pin here converts a weak pointer to a shared one if it hasn't expired.
+	 We assign to this NotificationPtr when we create our Notification later.
+	*/
 	TSharedPtr<SNotificationItem> NotificationPin = NotificationPtr.Pin();
-	
+
+	//We need to validate the new shared pointer because it could have expired.
 	if (NotificationPin.IsValid())
 	{
+		//Do nothing if the pointer was incorrectly handled for some reason.
 		return FReply::Handled();
 	}
 
+	//This is an alternate way to pass in the Notification Title when declaring the FNotificationInfo
+	const FText NotificationText = LOCTEXT("SlateGuideCreateNotificationButtons", "Restart The Editor?");
 	FNotificationInfo Info(NotificationText);
 
 	// Add the buttons with text, tooltip and callback
@@ -121,27 +128,35 @@ FReply SNotificationButtonsWidget::SpawnChoiceNotification()
 		FSimpleDelegate::CreateRaw(this, &SNotificationButtonsWidget::DismissClicked))
 	);
 
-	//Display a different info icon than default warning
-	Info.Image = FCoreStyle::Get().GetBrush(TEXT("MessageLog.Warning"));
-
-	// We will be keeping track of this ourselves
+	/*
+	  Prevents the notification from expiring and keeps it on screen until a button
+	  has been pressed.
+	*/
 	Info.bFireAndForget = false;
 
-	//Override default scale on the notification
+	//Some additional styling information
 	Info.WidthOverride = 200.0f;
-
 	Info.bUseLargeFont = false;
 	Info.bUseThrobber = false;
 	Info.bUseSuccessFailIcons = false;
+	//Display a different info icon than default warning
+	Info.Image = FCoreStyle::Get().GetBrush(TEXT("MessageLog.Warning"));
 
-	// Launch notification
+	/*
+	  Launch notification - This is where we store a pointer to the notification,
+	  the reason we do this is because we need to continue to access this in the button
+	  states below - and is the reason we've defined it in the header and not here in
+	  the method.
+	*/
 	NotificationPtr = FSlateNotificationManager::Get().AddNotification(Info);
-	NotificationPin = NotificationPtr.Pin();
 
 	if (NotificationPin.IsValid())
 	{
+		//Setting the completed state of the Notification Pin is used for handling
+		//the transition animations and fading depending on the fail state and clean up.
 		NotificationPin->SetCompletionState(SNotificationItem::CS_Pending);
 	}
+
 	return FReply::Handled();
 }
 
@@ -150,9 +165,15 @@ void SNotificationButtonsWidget::AcceptClicked()
 	TSharedPtr<SNotificationItem> NotificationPin = NotificationPtr.Pin();
 	if (NotificationPin.IsValid())
 	{
+		//Set new text on our existing notification
 		NotificationPin->SetText(LOCTEXT("RestartingNow", "You can do a thing here, SNotificationsWidget::OnNotificationAcceptClicked()"));
+		
 		NotificationPin->SetCompletionState(SNotificationItem::CS_Success);
+
+		//Inform our notification to fade out
 		NotificationPin->ExpireAndFadeout();
+		
+		//Clean up
 		NotificationPtr.Reset();
 	}
 
